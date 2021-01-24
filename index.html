@@ -1,0 +1,117 @@
+<html>
+	<head>
+		<title>Complex Function Plotter</title>
+		<style>
+			body {
+				margin: 0;
+				border: 0;
+				padding: 0;
+				background-color: black;
+				color: white;
+				font-family: Consolas, monospace;
+				font-size: 1em;
+			}
+			div, input, button, select {
+				font-family: Consolas, monospace;
+			}
+			canvas {
+				width: 100vw;
+				height: 100vh;
+				margin: 0;
+				border: 0;
+				padding: 0;
+				display: block;
+				z-index: 0;
+			}
+			#top-box {
+				position: absolute;
+				margin: 10;
+				padding: 10;
+				left: 0;
+				top: 0;
+				z-index: 1;
+				background-color: #1119;
+			}
+			#coords-box {
+				position: fixed;
+				margin: 10;
+				bottom: 0;
+				left: 0;
+				z-index: 1;
+				color: white;
+				font-size: 0.75em;
+				text-shadow: /* lol */
+					0px 0px 3px #000,
+					0px 0px 3px #000,
+					0px 0px 3px #000,
+					0px 0px 3px #000,
+					0px 0px 3px #000;
+			}
+			#options {
+				display: block;
+				position: fixed;
+				top: 0;
+				right: 0;
+				z-index: 2;
+				font-size: 0.75em;
+			}
+			#options-button {
+				background-color: #1119;
+				padding: 2 5;
+				display: block;
+			}
+			#options-box {
+				background-color: #1119;
+				padding: 5 5;
+				display: none;
+			}
+			#options:hover #options-button {
+				display: none;
+			}
+			#options:hover #options-box {
+				display: block;
+			}
+			.option {
+				margin: 5px;
+			}
+			textarea {
+				margin: 5px 0px;
+				width: 100%;
+				resize: vertical;
+				display: block;
+				white-space: nowrap;
+			}
+		</style>
+	</head>
+	<body>
+		<!--<script src="https://cdn.jsdelivr.net/npm/gpu.js@latest/dist/gpu-browser.js"></script>-->
+		<canvas id="canvas"></canvas>
+		<div id="top-box">
+			<input type="text" id="formula-box" style="width:250" value="z"></input>
+			<button type="button" id="go-button">Go</button>
+			<button type="button" id="reset-zoom-button">Reset zoom</button>
+		</div>
+		<div id="coords-box"></div>
+		<div id="options">
+			<div id="options-button">options</div>
+			<div id="options-box">
+				<div class="option">
+					<label for="color-select">Color function:</label>
+					<select name="color-select" id="color-select"></select>
+					<textarea id="color-code-box" rows="10" cols="60"></textarea>
+					<button type="button" id="color-set-button">Set as color function</button>
+				</div>
+				<!--<div class="option">
+					<label for="oversample-box">Oversampling:</label>
+					<input type="text" name="oversample-box" id="oversample-box" style="width:40" value="1"></input>
+					<button type="button" id="oversample-apply">Apply</button>
+				</div>-->
+			</div>
+		</div>
+		<script src="complex.js"></script>
+		<script src="parse.js"></script>
+		<script src="webgl_setup.js"></script>
+		<script src="colorfuncs.js"></script>
+		<script src="complexplot.js"></script>
+	</body>
+</html>
