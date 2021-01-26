@@ -142,6 +142,42 @@ vec2 c_atan(vec2 z) {
 	);
 }`);
 
+// ----- special functions (mathematically) -----
+register("c_gamma", `
+// https://en.wikipedia.org/wiki/Lanczos_approximation, ported Python code
+vec2 c_gamma(vec2 z) {
+	float p[8];
+	p[0] = 676.5203681218851;
+	p[1] = -1259.1392167224028;
+	p[2] = 771.32342877765313;
+	p[3] = -176.61502916214059;
+	p[4] = 12.507343278686905;
+	p[5] = -0.13857109526572012;
+	p[6] = 9.9843695780195716e-6;
+	p[7] = 1.5056327351493116e-7;
+	bool reflect = z.x < .5;
+	vec2 zp = reflect ? C_ONE - z : z;
+	zp = zp - C_ONE;
+	vec2 x = vec2(0.99999999999980993, 0.);
+	for (int i = 0; i < 8; i++) {
+		x += c_div(vec2(p[i], 0.), zp + vec2(float(i), 0.) + C_ONE);
+	}
+	vec2 t = zp + vec2(8., 0.) - vec2(.5, 0.);
+	vec2 y = c_pow(t, zp + vec2(.5, 0.));
+	y = c_mul(c_sqrt(vec2(2. * PI, 0.)), y);
+	y = c_mul(y, c_exp(-t));
+	y = c_mul(y, x);
+	if (reflect) {
+		y = c_div(C_PI, c_mul(c_sin(c_mul(C_PI, z)), y));
+	}
+	return y;
+}`);
+
+register("c_factorial", `
+vec2 c_factorial(vec2 z) {
+	return c_gamma(z + C_ONE);
+}`);
+
 // ----- misc -----
 
 register("c_avg", `
@@ -150,7 +186,7 @@ vec2 c_avg(vec2 z, vec2 w) {
 }`);
 
 
-// ====== SPECIAL FUNCTIONS ======
+// ====== FUNCTIONS THAT TAKE IN EXPRESSIONS ======
 const specialFuncs = new Map(); // func names to glsl code generators
 const specialFuncInstances = new Map(); // ids to glsl code
 
@@ -181,5 +217,20 @@ registerSpecial("iter", function(args, id) {
 			z0 = ${args[2]};
 		}
 		return z0;
+	}`;
+});
+
+registerSpecial("sum", function(args, id) {
+	return `
+	vec2 sum_${id}(vec2 z) {
+		vec2 s = C_ZERO;
+		int limit = int(${args[2]}.x);
+		vec2 k;
+		for (int i = 0; i < MAX_ITERATIONS; i++) {
+			if (i >= limit) {break;}
+			k = vec2(float(i), 0);
+			s += ${args[1]};
+		}
+		return s;
 	}`;
 });

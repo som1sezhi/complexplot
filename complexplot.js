@@ -127,8 +127,9 @@ function compile(formula) {
 	#define C_ZERO vec2(0.,0.)
 	#define C_ONE vec2(1.,0.)
 	#define C_TWO vec2(2.,0.)
+	#define C_PI vec2(3.1415926535897932384626433832795,0.)
 	#define MAX_ITERATIONS 200
-	precision mediump float;
+	precision highp float;
 	varying vec2 v_z;
 	${allFuncs}
 	${allSpecialFuncs}
