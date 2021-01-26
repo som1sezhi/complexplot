@@ -48,7 +48,7 @@ const alphaTokens = {
 	"i": new Token("i", "num"),
 	"pi": new Token("pi", "num"),
 	"e": new Token("e", "num"),
-	"iter": new Token("iter", "special-func", 20, "left", 4, [true, false, false, false]),
+	"iter": new Token("iter", "special-func", 20, "left", 4, [true, true, false, false]),
 	"sum": new Token("sum", "special-func", 20, "left", 3, [true, false, false])
 };
 

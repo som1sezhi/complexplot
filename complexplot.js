@@ -136,13 +136,6 @@ function compile(formula) {
 
 	vec2 f(vec2 z) {
 		return ${exp};
-		//vec2 z0 = vec2(0., 0.);
-		//int limit = int(vec2(5., 0.).x);
-		//for (int i = 0; i < MAX_ITERATIONS; i++) {
-		//	if (i >= limit) {break;}
-		//	z0 = c_add(c_mul(z0, z0), z);
-		//}
-		//return z0;
 	}
 
 	float _v(float m1, float m2, float hue) {
@@ -178,9 +171,6 @@ function compile(formula) {
 
 	void main() {
 		vec2 fz = f(v_z);
-		//float h = mod(arg(fz) / (2. * PI), 1.);
-		//float l = 1. - 2. / PI * atan(length(fz));
-		//float l = 1. / (sqrt(length(fz)) + 1.);
 		gl_FragColor = vec4(colorFunc(fz), 1.);
 	}
 	`;

@@ -209,8 +209,8 @@ function registerSpecial(name, generatorFunc) {
 
 registerSpecial("iter", function(args, id) {
 	return `
-	vec2 iter_${id}(vec2 z) {
-		vec2 z0 = ${args[1]};
+	vec2 iter_${id}(vec2 z, vec2 initial) {
+		vec2 z0 = initial;
 		int limit = int(${args[3]}.x);
 		for (int i = 0; i < MAX_ITERATIONS; i++) {
 			if (i >= limit) {break;}
