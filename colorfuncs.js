@@ -37,9 +37,10 @@ float g(float x, float a, float b) {
 	return .5 + .5 * t(2. * b * a * u(x / a));
 }
 vec3 colorFunc(vec2 fz) {
+	bool nan = isNan(length(fz));
 	float h = mod(arg(fz) / (2. * PI), 1.);
 	float s = g(length(fz), .4, .3);
-	float v = 1. - g(length(fz), .6, .5);
+	float v = nan ? 0. : 1. - g(length(fz), .6, .5);
 	return hsv2rgb(h, s, v);
 }`);
 

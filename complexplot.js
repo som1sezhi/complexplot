@@ -138,6 +138,10 @@ function compile(formula) {
 		return ${exp};
 	}
 
+	bool isNan(float val) {
+		return (val < 0.0 || 0.0 < val || val == 0.0) ? false : true;
+	}
+
 	float _v(float m1, float m2, float hue) {
 		if (hue < 0.) hue += 1.;
 		if (hue > 1.) hue -= 1.;

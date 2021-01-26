@@ -180,7 +180,7 @@ function assignTokens(splitStr) {
 	const operandTypes = []
 	for (let i = 1; i < tokens.length; i++) {
 		if (["var", "num", "right-paren"].includes(tokens[i - 1].type) &&
-		    ["var", "num", "left-paren"].includes(tokens[i].type)) {
+		    ["var", "num", "left-paren", "func", "special-func"].includes(tokens[i].type)) {
 			tokens.splice(i, 0, validTokens["*"]);
 			i++;
 		}
