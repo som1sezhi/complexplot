@@ -100,7 +100,11 @@ function updateCoords(e) {
 }
 
 function compile(formula) {
+	let allSpecialFuncs = "";
 	let exp = parseFormula(formula);
+	for (const func of specialFuncInstances) {
+		allSpecialFuncs += func[1];
+	}
 
 	let vsSource = `
 	#define PI 3.1415926535897932384626433832795
@@ -120,14 +124,24 @@ function compile(formula) {
 	#define PI 3.1415926535897932384626433832795
 	#define E 2.7182818284590452353602874713527
 	#define C_I vec2(0.,1.)
+	#define C_ZERO vec2(0.,0.)
 	#define C_ONE vec2(1.,0.)
 	#define C_TWO vec2(2.,0.)
+	#define MAX_ITERATIONS 200
 	precision mediump float;
 	varying vec2 v_z;
 	${allFuncs}
+	${allSpecialFuncs}
 
 	vec2 f(vec2 z) {
 		return ${exp};
+		//vec2 z0 = vec2(0., 0.);
+		//int limit = int(vec2(5., 0.).x);
+		//for (int i = 0; i < MAX_ITERATIONS; i++) {
+		//	if (i >= limit) {break;}
+		//	z0 = c_add(c_mul(z0, z0), z);
+		//}
+		//return z0;
 	}
 
 	float _v(float m1, float m2, float hue) {

@@ -12,7 +12,7 @@ class Node {
 }
 
 class Token {
-	constructor(val, type, preced, assoc, arity) {
+	constructor(val, type, preced, assoc, arity, specialInclude) {
 		this.val = val;
 		this.type = type;
 		this.preced = preced;
@@ -24,6 +24,7 @@ class Token {
 		} else {
 			this.arity = arity;
 		}
+		this.specialInclude = specialInclude;
 	}
 
 	toString() {
@@ -41,9 +42,11 @@ const unaryFuncList = [
 
 const alphaTokens = {
 	"z": new Token("z", "var"),
+	"z'": new Token("z'", "var"),
 	"i": new Token("i", "num"),
 	"pi": new Token("pi", "num"),
-	"e": new Token("e", "num")
+	"e": new Token("e", "num"),
+	"iter": new Token("iter", "special-func", 20, "left", 4, [true, false, false, false])
 };
 
 const funcNames = {
@@ -53,6 +56,7 @@ const funcNames = {
 	"* op": "c_mul",
 	"/ op": "c_div",
 	"^ op": "c_pow",
+	"iter special-func": "iter"
 }
 
 function addFunction(tokenName, arity, glslFuncName) {
@@ -123,7 +127,7 @@ function splitWord(word) {
 // split a formula in string form into token strings
 function splitString(str) {
 	// based on some code from http://davidbau.com/conformal/
-	let regex = /(?:\s*)(?:((?:\d+(?:\.\d*)?|\.\d+)|[-+*/()^,]|[a-zA-Z]+)|(\S))/g;
+	let regex = /(?:\s*)(?:((?:\d+(?:\.\d*)?|\.\d+)|[-+*/()^,]|[a-zA-Z']+)|(\S))/g;
 	const splitStr = [];
 	let match;
 	while ((match = regex.exec(str)) != null) {
@@ -204,7 +208,7 @@ function shuntingYard(tokens) {
 		const token = tokens.shift();
 		if (token.type == "num" || token.type == "var") {
 			output.push(new Node(token));
-		} else if (token.type == "func") {
+		} else if (token.type == "func" || token.type == "special-func") {
 			ops.push(token);
 		} else if (token.type == "op") {
 			while (ops.length &&
@@ -225,7 +229,8 @@ function shuntingYard(tokens) {
 			if (ops.peek().type == "left-paren") {
 				ops.pop();
 			}
-			if (ops.length && ops.peek().type == "func") {
+			if (ops.length &&
+				(ops.peek().type == "func" || token.type == "special-func")) {
 				pushOp();
 			}
 		} else if (token.type == "comma") {
@@ -256,9 +261,26 @@ function createExp(node) {
 		// add decimal point for numbers missing it
 		return `vec2(${node.token.val}.,0.)`
 	} else if (node.token.type == "var") {
-		// right now theres only one variable avaialble
-		return "z";
+		if (node.token.val == "z'") return "z0"; // special case
+		return node.token.val;
+	} else if (node.token.type == "special-func") {
+		// glsl expressions for each of the arguments given by the user
+		const funcArgs = [];
+		// actual glsl args to be injected into f(z) code
+		let argsExp = "";
+		for (let i = 0; i < node.children.length; i++) {
+			let subExp = createExp(node.children[i])
+			funcArgs.push(subExp);
+			if (node.token.specialInclude[i]) {
+				if (argsExp) argsExp += ", ";
+				argsExp += subExp;
+			}
+		}
+		const funcName = funcNames[node.token.val + " " + node.token.type];
+		const id = addSpecialFuncInstance(funcName, funcArgs);
+		return `${funcName}_${id}(${argsExp})`;
 	}
+	// for operators and normal functions
 	let exp = funcNames[node.token.val + " " + node.token.type] + "(";
 	for (let i = 0; i < node.children.length; i++) {
 		if (i > 0) {
@@ -271,5 +293,6 @@ function createExp(node) {
 }
 
 function parseFormula(str) {
+	clearSpecialFuncInstances();
 	return createExp(shuntingYard(lex(str)));
 }

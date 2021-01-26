@@ -85,6 +85,9 @@ vec2 c_ln(vec2 z) {
 
 register("c_pow", `
 vec2 c_pow(vec2 z, vec2 w) {
+	if (z == C_ZERO) {
+		return w == C_ZERO ? C_ONE : C_ZERO;
+	}
 	return c_exp(c_mul(w, c_ln(z)));
 }`);
 
@@ -146,97 +149,37 @@ vec2 c_avg(vec2 z, vec2 w) {
 	return vec2((z.x + w.x) * .5, (z.y + w.y) * .5);
 }`);
 
-/*
-function arg(z) {
-	if (z[0] > 0) {
-		return Math.atan2(z[1], z[0]);
-	} else if (z[0] == 0) {
-		return z[1] > 0 ? Math.PI / 2 : -Math.PI / 2
-	} else if (z[1] >= 0) {
-		return Math.atan2(z[1], z[0]) + Math.PI;
+
+// ====== SPECIAL FUNCTIONS ======
+const specialFuncs = new Map(); // func names to glsl code generators
+const specialFuncInstances = new Map(); // ids to glsl code
+
+function addSpecialFuncInstance(name, args) {
+	let id = 0;
+	while (specialFuncInstances.get(id)) {
+		id++;
 	}
-	return Math.atan2(z[1], z[0]) - Math.PI;
+	specialFuncInstances.set(id, specialFuncs.get(name)(args, id));
+	return id;
 }
 
-function abs(z) {
-	return Math.sqrt(z[0] * z[0] + z[1] * z[1]);
+function clearSpecialFuncInstances() {
+	specialFuncInstances.clear();
 }
 
-function add(z, w) {
-	return [z[0] + w[0], z[1] + w[1]];
+function registerSpecial(name, generatorFunc) {
+	specialFuncs.set(name, generatorFunc);
 }
 
-function sub(z, w) {
-	return [z[0] - w[0], z[1] - w[1]];
-}
-
-function mul(z, w) {
-	return [
-		z[0] * w[0] - z[1] * w[1],
-		z[0] * w[1] + z[1] * w[0]
-	];
-}
-
-function div(z, w) {
-	return [
-		(z[0] * w[0] + z[1] * w[1]) / (w[0] * w[0] + w[1] * w[1]),
-		(z[1] * w[0] - z[0] * w[1]) / (w[0] * w[0] + w[1] * w[1])
-	];
-}*/
-/*
-function cexp(z) {
-	return [
-		Math.exp(z[0]) * Math.cos(z[1]),
-		Math.exp(z[0]) * Math.sin(z[1])
-	];
-}
-
-function ln(z) {
-	return [Math.log(abs(z)), arg(z)];
-}
-
-function cpow(z, w) {
-	return cexp(mul(w, ln(z)));
-}
-
-function csqrt(z) {
-	return cpow(z, [0.5, 0]);
-}
-
-function csin(z) {
-	return [Math.sin(z[0]) * Math.cosh(z[1]), Math.cos(z[0]) * Math.sinh(z[1])];
-}
-
-function ccos(z) {
-	return [Math.cos(z[0]) * Math.cosh(z[1]), -Math.sin(z[0]) * Math.sinh(z[1])];
-}
-
-function ctan(z) {
-	return div(csin(z), ccos(z));
-}
-
-function ccsc(z) {
-	return div([1, 0], csin(z));
-}
-
-function csec(z) {
-	return div([1, 0], ccos(z));
-}
-
-function ccot(z) {
-	return div([1, 0], ctan(z));
-}
-
-function casin(z) {
-	return mul(
-		[0, 1],
-		ln(
-			add(
-				csqrt(
-					sub([1, 0], cpow(z, [2, 0]))
-				),
-				mul(z, [0, 1])
-			)
-		)
-	);
-}*/
+registerSpecial("iter", function(args, id) {
+	return `
+	vec2 iter_${id}(vec2 z) {
+		vec2 z0 = ${args[1]};
+		int limit = int(${args[3]}.x);
+		for (int i = 0; i < MAX_ITERATIONS; i++) {
+			if (i >= limit) {break;}
+			z0 = ${args[2]};
+		}
+		return z0;
+	}`;
+});
