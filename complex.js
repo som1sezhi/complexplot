@@ -35,6 +35,11 @@ vec2 c_sgn(vec2 z) {
 	return normalize(z);
 }`);
 
+register("c_conj", `
+vec2 c_conj(vec2 z) {
+	return vec2(z.x, -z.y);
+}`);
+
 register("c_re", `
 vec2 c_re(vec2 z) {
 	return vec2(z.x, 0.);
@@ -209,9 +214,9 @@ function registerSpecial(name, generatorFunc) {
 
 registerSpecial("iter", function(args, id) {
 	return `
-	vec2 iter_${id}(vec2 z, vec2 initial) {
+	vec2 iter_${id}(vec2 z, vec2 initial, vec2 iter) {
 		vec2 z0 = initial;
-		int limit = int(${args[3]}.x);
+		int limit = int(iter.x);
 		for (int i = 0; i < MAX_ITERATIONS; i++) {
 			if (i >= limit) {break;}
 			z0 = ${args[2]};
@@ -220,11 +225,27 @@ registerSpecial("iter", function(args, id) {
 	}`;
 });
 
+registerSpecial("iteresc", function(args, id) {
+	return `
+	vec2 iteresc_${id}(vec2 z, vec2 initial, vec2 iter, vec2 bound) {
+		vec2 z0 = initial;
+		int limit = int(iter.x);
+		float flimit = float(limit);
+		float b = length(bound);
+		for (int i = 0; i < MAX_ITERATIONS; i++) {
+			if (length(z0) > b) {return vec2(float(i)/flimit, 0.);}
+			if (i >= limit) {break;}
+			z0 = ${args[2]};
+		}
+		return C_ONE;
+	}`;
+});
+
 registerSpecial("sum", function(args, id) {
 	return `
-	vec2 sum_${id}(vec2 z) {
+	vec2 sum_${id}(vec2 z, vec2 iter) {
 		vec2 s = C_ZERO;
-		int limit = int(${args[2]}.x);
+		int limit = int(iter.x);
 		vec2 k;
 		for (int i = 0; i < MAX_ITERATIONS; i++) {
 			if (i >= limit) {break;}

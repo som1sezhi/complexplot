@@ -34,7 +34,7 @@ class Token {
 
 // this is just to make it easier for me to add functions
 const unaryFuncList = [
-	'abs', 'arg', 'sgn', 're', 'im',
+	'abs', 'arg', 'sgn', 'conj', 're', 'im',
 	'exp', 'ln', 'sqrt',
 	'sin', 'cos', 'tan',
 	'asin', 'acos', 'atan',
@@ -48,8 +48,9 @@ const alphaTokens = {
 	"i": new Token("i", "num"),
 	"pi": new Token("pi", "num"),
 	"e": new Token("e", "num"),
-	"iter": new Token("iter", "special-func", 20, "left", 4, [true, true, false, false]),
-	"sum": new Token("sum", "special-func", 20, "left", 3, [true, false, false])
+	"iter": new Token("iter", "special-func", 20, "left", 4, [true, true, false, true]),
+	"iteresc": new Token("iteresc", "special-func", 20, "left", 5, [true, true, false, true, true]),
+	"sum": new Token("sum", "special-func", 20, "left", 3, [true, false, true])
 };
 
 const funcNames = {
@@ -60,6 +61,7 @@ const funcNames = {
 	"/ op": "c_div",
 	"^ op": "c_pow",
 	"iter special-func": "iter",
+	"iteresc special-func": "iteresc",
 	"sum special-func": "sum"
 }
 
