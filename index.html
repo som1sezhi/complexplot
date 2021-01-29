@@ -74,12 +74,21 @@
 			.option {
 				margin: 5px;
 			}
-			textarea {
+			#color-code-box {
 				margin: 5px 0px;
 				width: 100%;
 				resize: vertical;
 				display: block;
 				white-space: nowrap;
+			}
+			#formula-box {
+				width: 250;
+				resize: horizontal;
+				display: inline;
+				white-space: nowrap;
+				vertical-align: middle;
+				outline: none;
+				overflow: hidden;
 			}
 		</style>
 	</head>
@@ -87,7 +96,7 @@
 		<!--<script src="https://cdn.jsdelivr.net/npm/gpu.js@latest/dist/gpu-browser.js"></script>-->
 		<canvas id="canvas"></canvas>
 		<div id="top-box">
-			<input type="text" id="formula-box" style="width:250" value="z"></input>
+			<textarea id="formula-box" rows="1" value="z"></textarea>
 			<button type="button" id="go-button">Go</button>
 			<button type="button" id="reset-zoom-button">Reset zoom</button>
 		</div>

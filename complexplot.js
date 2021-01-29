@@ -38,6 +38,15 @@ goButton.onclick = function() {
 	}
 	draw();
 }
+formulaBox.addEventListener("keydown", function(e) {
+	if (e.keyCode == 13) {
+		e.preventDefault();
+		goButton.click();
+	}
+});
+formulaBox.addEventListener("change", function() {
+	formulaBox.value = formulaBox.value.replace(/[\n\r]/g, " ");
+})
 
 resetZoomButton.onclick = function() {
 	zoom = DEFAULT_ZOOM;
@@ -192,6 +201,7 @@ function compile(formula) {
 			center: gl.getUniformLocation(program, "u_center")
 		}
 	};
+
 	const posBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
 	const positions = [-1, -1, -1, 3, 3, -1];
