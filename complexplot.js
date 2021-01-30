@@ -9,6 +9,7 @@ let colorFuncSource = colorFuncs.get("HSL, arctan");
 let programInfo, buffers;
 let zoom = DEFAULT_ZOOM;
 let center = [0, 0];
+let paramS = 0, paramT = 0;
 
 const formulaBox = document.getElementById("formula-box");
 const goButton = document.getElementById("go-button");
@@ -71,6 +72,18 @@ colorSetButton.onclick = function() {
 		alert("An error occurred. Check console for details.");
 		throw e;
 	}
+	draw();
+}
+
+// sliders at bottom-right
+document.getElementById("slider-s").oninput = function() {
+	paramS = document.getElementById("slider-s").value;
+	document.getElementById("reading-s").innerHTML = `s = ${paramS}`;
+	draw();
+}
+document.getElementById("slider-t").oninput = function() {
+	paramT = document.getElementById("slider-t").value;
+	document.getElementById("reading-t").innerHTML = `t = ${paramT}`;
 	draw();
 }
 
@@ -139,6 +152,8 @@ function compile(formula) {
 	#define C_PI vec2(3.1415926535897932384626433832795,0.)
 	#define MAX_ITERATIONS 200
 	precision highp float;
+	uniform float u_s;
+	uniform float u_t;
 	varying vec2 v_z;
 	${allFuncs}
 	${allSpecialFuncs}
@@ -198,7 +213,9 @@ function compile(formula) {
 		uniformLocs: {
 			res: gl.getUniformLocation(program, "u_res"),
 			zoom: gl.getUniformLocation(program, "u_zoom"),
-			center: gl.getUniformLocation(program, "u_center")
+			center: gl.getUniformLocation(program, "u_center"),
+			s: gl.getUniformLocation(program, "u_s"),
+			t: gl.getUniformLocation(program, "u_t")
 		}
 	};
 
@@ -226,6 +243,8 @@ function draw() {
 	gl.uniform2f(programInfo.uniformLocs.res, canvas.clientWidth / 2, canvas.clientHeight / 2);
 	gl.uniform1f(programInfo.uniformLocs.zoom, zoom);
 	gl.uniform2fv(programInfo.uniformLocs.center, center);
+	gl.uniform1f(programInfo.uniformLocs.s, paramS);
+	gl.uniform1f(programInfo.uniformLocs.t, paramT);
 
 	gl.drawArrays(gl.TRIANGLES, 0, 3);
 }

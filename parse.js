@@ -45,6 +45,8 @@ const alphaTokens = {
 	"z": new Token("z", "var"),
 	"z'": new Token("z'", "var"),
 	"k": new Token("k", "var"),
+	"s": new Token("s", "var"),
+	"t": new Token("t", "var"),
 	"i": new Token("i", "num"),
 	"pi": new Token("pi", "num"),
 	"e": new Token("e", "num"),
@@ -267,7 +269,10 @@ function createExp(node) {
 		// add decimal point for numbers missing it
 		return `vec2(${node.token.val}.,0.)`
 	} else if (node.token.type == "var") {
-		if (node.token.val == "z'") return "z0"; // special case
+		// special case
+		if (node.token.val == "z'") return "z0";
+		else if (node.token.val == "s") return "vec2(u_s,0.)";
+		else if (node.token.val == "t") return "vec2(u_t,0.)";
 		return node.token.val;
 	} else if (node.token.type == "special-func") {
 		// glsl expressions for each of the arguments given by the user

@@ -9,7 +9,6 @@
 				background-color: black;
 				color: white;
 				font-family: Consolas, monospace;
-				font-size: 1em;
 			}
 			div, input, button, select {
 				font-family: Consolas, monospace;
@@ -23,13 +22,15 @@
 				display: block;
 				z-index: 0;
 			}
-			#top-box {
+			#control-box {
 				position: absolute;
 				margin: 10;
-				padding: 10;
 				left: 0;
 				top: 0;
 				z-index: 1;
+			}
+			#top-box {
+				padding: 10;
 				background-color: #1119;
 			}
 			#coords-box {
@@ -38,8 +39,10 @@
 				bottom: 0;
 				left: 0;
 				z-index: 1;
+			}
+			#coords-box, #parameters-box {
 				color: white;
-				font-size: 0.75em;
+				font-size: 0.8em;
 				text-shadow: /* lol */
 					0px 0px 3px #000,
 					0px 0px 3px #000,
@@ -47,13 +50,17 @@
 					0px 0px 3px #000,
 					0px 0px 3px #000;
 			}
+			#parameters-box {
+				margin-top: 10;
+				line-height: 1.5em;
+			}
 			#options {
 				display: block;
 				position: fixed;
 				top: 0;
 				right: 0;
 				z-index: 2;
-				font-size: 0.75em;
+				font-size: 0.8em;
 			}
 			#options-button {
 				background-color: #1119;
@@ -90,15 +97,28 @@
 				outline: none;
 				overflow: hidden;
 			}
+			input[type=range] {
+				vertical-align: middle;
+				width: 200;
+			}
 		</style>
 	</head>
 	<body>
 		<!--<script src="https://cdn.jsdelivr.net/npm/gpu.js@latest/dist/gpu-browser.js"></script>-->
 		<canvas id="canvas"></canvas>
-		<div id="top-box">
-			<textarea id="formula-box" rows="1" value="z"></textarea>
-			<button type="button" id="go-button">Go</button>
-			<button type="button" id="reset-zoom-button">Reset zoom</button>
+		<div id="control-box">
+			<div id=top-box>
+				<textarea id="formula-box" rows="1">z</textarea>
+				<button type="button" id="go-button">Go</button>
+				<button type="button" id="reset-zoom-button">Reset zoom</button>
+			</div>
+			<div id="parameters-box">
+				<input type="range" min="0" max="1" step="0.001" value="0" id="slider-s" />
+				<span id="reading-s">s = 0</span>
+				<br />
+				<input type="range" min="0" max="1" step="0.001" value="0" id="slider-t" />
+				<span id="reading-t">t = 0</span>
+			</div>
 		</div>
 		<div id="coords-box"></div>
 		<div id="options">
