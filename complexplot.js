@@ -431,7 +431,7 @@ function generateShareLink(shareColor) {
 		state.params.push(slider2Params.get(slider));
 	}
 	let str = lzbase62.compress(JSON.stringify(state));
-	return location.hostname + location.pathname + "?s=" + str;
+	return location.protocol + "//" + location.hostname + location.pathname + "?s=" + str;
 }
 
 function runFromStateObj(state) {
