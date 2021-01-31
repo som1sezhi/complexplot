@@ -16,7 +16,7 @@ let paramsSource = "";
 let programInfo, buffers;
 let zoom = DEFAULT_ZOOM;
 let center = [0, 0];
-// let paramS = 0, paramT = 0;
+let currentFormula = "z";
 
 // ----- document elements -----
 const formulaBox = document.getElementById("formula-box");
@@ -43,6 +43,7 @@ goButton.onclick = function() {
 		alert("An error occurred. Check console for details.");
 		throw e;
 	}
+	currentFormula = formulaBox.value;
 	draw();
 }
 formulaBox.addEventListener("keydown", function(e) {
@@ -67,7 +68,7 @@ colorSelect.onchange = function() {
 colorSetButton.onclick = function() {
 	colorFuncSource = colorCodeBox.value;
 	try {
-		compile(formulaBox.value);
+		compile(currentFormula);
 	} catch (e) {
 		alert("An error occurred. Check console for details.");
 		throw e;
@@ -76,135 +77,9 @@ colorSetButton.onclick = function() {
 }
 
 // ----- parameters functionality -----
-const slider2Params = new Map();
-// update uniform parameter source code
-function updateParamsSource() {
-	paramsSource = "";
-	for (const p of slider2Params) {
-		paramsSource += "uniform float u_" + p[1].name + ";\n";
-	}
-}
-function updateReading(slider, reading) {
-	let param = slider2Params.get(slider);
-	reading.innerHTML = `${param.name} = ${+lerp(param.min, param.max, param.val).toFixed(14)}`;
-}
-function lerp(v0, v1, t) {
-	return v0 + t * (v1 - v0);
-}
 document.getElementById("add-param-button").onclick = function() {
-	const paramDiv = document.createElement("div");
-	const paramNameBox = document.createElement("input");
-	const paramMinBox = document.createElement("input");
-	const paramMaxBox = document.createElement("input");
-	const paramRemoveButton = document.createElement("button");
-	const paramSliderDiv = document.createElement("div");
-	const paramSlider = document.createElement("input");
-	const paramReading = document.createElement("span");
-
-	paramDiv.className = "param-item";
-
-	paramNameBox.type = "text";
-	let id = 0;
-	function isNameTaken(name) {
-		for (const p of slider2Params) {
-			if (p[1].name == name) return true;
-		}
-		return false;
-	}
-	while (isNameTaken("p" + id)) id++;
-	paramNameBox.value = "p" + id;
-	paramNameBox.onchange = function() {
-		let newName = paramNameBox.value;
-		if (!(/^[a-zA-Z][a-zA-Z0-9]*$/.test(newName))) {
-			alert("A parameter name must contain only alphanumeric characters. The name should not begin with a digit.");
-			paramNameBox.value = slider2Params.get(paramSlider).name;
-			return;
-		}
-		try {
-			addParamToken(newName);
-		} catch {
-			alert("A token with that name already exists. Please choose another name.");
-			paramNameBox.value = slider2Params.get(paramSlider).name;
-			return;
-		}
-		removeParamToken(slider2Params.get(paramSlider).name);
-		slider2Params.get(paramSlider).name = newName;
-		updateReading(paramSlider, paramReading);
-		updateParamsSource();
-	}
-	slider2Params.set(paramSlider, {
-		name: paramNameBox.value,
-		min: 0,
-		max: 1,
-		val: 0
-	});
-
-	paramMinBox.type = "number";
-	paramMinBox.className = "param-bounds";
-	paramMinBox.value = 0;
-	paramMinBox.onchange = function() {
-		slider2Params.get(paramSlider).min = parseFloat(paramMinBox.value);
-		updateReading(paramSlider, paramReading);
-		draw();
-	}
-	paramMaxBox.type = "number";
-	paramMaxBox.className = "param-bounds";
-	paramMaxBox.value = 1;
-	paramMaxBox.onchange = function() {
-		slider2Params.get(paramSlider).max = parseFloat(paramMaxBox.value);
-		updateReading(paramSlider, paramReading);
-		draw();
-	}
-
-	paramRemoveButton.type = "button";
-	paramRemoveButton.onclick = function() {
-		removeParamToken(slider2Params.get(paramSlider).name);
-		slider2Params.delete(paramSlider);
-		paramDiv.remove();
-		paramSliderDiv.remove();
-		updateParamsSource();
-	}
-	paramRemoveButton.className = "param-remove-button";
-	paramRemoveButton.innerHTML = "X";
-
-	paramSlider.type = "range";
-	paramSlider.min = 0;
-	paramSlider.max = 1;
-	paramSlider.step = 0.001;
-	paramSlider.value = 0;
-	paramSlider.oninput = function() {
-		let val = parseFloat(paramSlider.value);
-		slider2Params.get(paramSlider).val = val;
-		updateReading(paramSlider, paramReading);
-		draw();
-	}
-
-	updateReading(paramSlider, paramReading);
-	addParamToken(paramNameBox.value);
-	updateParamsSource();
-
-	paramDiv.appendChild(paramNameBox);
-	paramDiv.appendChild(paramMinBox);
-	paramDiv.appendChild(paramMaxBox);
-	paramDiv.appendChild(paramRemoveButton);
-	document.getElementById("params-list").appendChild(paramDiv);
-	paramSliderDiv.appendChild(paramSlider);
-	paramSliderDiv.appendChild(paramReading);
-	document.getElementById("parameters-box").appendChild(paramSliderDiv);
+	addParameter();
 };
-
-// ----- slider functionality -----
-/*
-document.getElementById("slider-s").oninput = function() {
-	paramS = document.getElementById("slider-s").value;
-	document.getElementById("reading-s").innerHTML = `s = ${paramS}`;
-	draw();
-}
-document.getElementById("slider-t").oninput = function() {
-	paramT = document.getElementById("slider-t").value;
-	document.getElementById("reading-t").innerHTML = `t = ${paramT}`;
-	draw();
-}*/
 
 // ----- navigation functionality -----
 let mouseDown = false;
@@ -236,6 +111,127 @@ window.addEventListener("resize", function() {
 	resize();
 	draw();
 });
+
+const slider2Params = new Map();
+// update uniform parameter source code
+function updateParamsSource() {
+	paramsSource = "";
+	for (const p of slider2Params) {
+		paramsSource += "uniform float u_" + p[1].name + ";\n";
+	}
+}
+function updateReading(slider, reading) {
+	let param = slider2Params.get(slider);
+	reading.innerHTML = `${param.name} = ${+lerp(param.min, param.max, param.val).toFixed(14)}`;
+}
+function lerp(v0, v1, t) {
+	return v0 + t * (v1 - v0);
+}
+function addParameter(paramObj) {
+	if (!paramObj) {
+		paramObj = {
+			min: 0,
+			max: 1,
+			val: 0
+		};
+		let id = 0;
+		function isNameTaken(name) {
+			for (const p of slider2Params) {
+				if (p[1].name == name) return true;
+			}
+			return false;
+		}
+		while (isNameTaken("p" + id)) id++;
+		paramObj.name = "p" + id;
+	}
+
+	const paramDiv = document.createElement("div");
+	const paramNameBox = document.createElement("input");
+	const paramMinBox = document.createElement("input");
+	const paramMaxBox = document.createElement("input");
+	const paramRemoveButton = document.createElement("button");
+	const paramSliderDiv = document.createElement("div");
+	const paramSlider = document.createElement("input");
+	const paramReading = document.createElement("span");
+
+	paramDiv.className = "param-item";
+
+	paramNameBox.type = "text";
+	paramNameBox.value = paramObj.name;
+	paramNameBox.onchange = function() {
+		let newName = paramNameBox.value;
+		if (!(/^[a-zA-Z][a-zA-Z0-9]*$/.test(newName))) {
+			alert("A parameter name must contain only alphanumeric characters. The name should not begin with a digit.");
+			paramNameBox.value = slider2Params.get(paramSlider).name;
+			return;
+		}
+		try {
+			addParamToken(newName);
+		} catch {
+			alert("A token with that name already exists. Please choose another name.");
+			paramNameBox.value = slider2Params.get(paramSlider).name;
+			return;
+		}
+		removeParamToken(slider2Params.get(paramSlider).name);
+		slider2Params.get(paramSlider).name = newName;
+		updateReading(paramSlider, paramReading);
+		updateParamsSource();
+	}
+	slider2Params.set(paramSlider, paramObj);
+
+	paramMinBox.type = "number";
+	paramMinBox.className = "param-bounds";
+	paramMinBox.value = paramObj.min;
+	paramMinBox.onchange = function() {
+		slider2Params.get(paramSlider).min = parseFloat(paramMinBox.value);
+		updateReading(paramSlider, paramReading);
+		draw();
+	}
+	paramMaxBox.type = "number";
+	paramMaxBox.className = "param-bounds";
+	paramMaxBox.value = paramObj.max;
+	paramMaxBox.onchange = function() {
+		slider2Params.get(paramSlider).max = parseFloat(paramMaxBox.value);
+		updateReading(paramSlider, paramReading);
+		draw();
+	}
+
+	paramRemoveButton.type = "button";
+	paramRemoveButton.onclick = function() {
+		removeParamToken(slider2Params.get(paramSlider).name);
+		slider2Params.delete(paramSlider);
+		paramDiv.remove();
+		paramSliderDiv.remove();
+		updateParamsSource();
+	}
+	paramRemoveButton.className = "param-remove-button";
+	paramRemoveButton.innerHTML = "&times;";
+
+	paramSlider.type = "range";
+	paramSlider.min = 0;
+	paramSlider.max = 1;
+	paramSlider.step = 0.001;
+	paramSlider.value = paramObj.value;
+	paramSlider.oninput = function() {
+		let val = parseFloat(paramSlider.value);
+		slider2Params.get(paramSlider).val = val;
+		updateReading(paramSlider, paramReading);
+		draw();
+	}
+
+	updateReading(paramSlider, paramReading);
+	addParamToken(paramNameBox.value);
+	updateParamsSource();
+
+	paramDiv.appendChild(paramNameBox);
+	paramDiv.appendChild(paramMinBox);
+	paramDiv.appendChild(paramMaxBox);
+	paramDiv.appendChild(paramRemoveButton);
+	document.getElementById("params-list").appendChild(paramDiv);
+	paramSliderDiv.appendChild(paramSlider);
+	paramSliderDiv.appendChild(paramReading);
+	document.getElementById("parameters-box").appendChild(paramSliderDiv);
+}
 
 function updateCoords(e) {
 	const rect = canvas.getBoundingClientRect();
@@ -389,7 +385,65 @@ function resize() {
 	}
 }
 
+function generateShareLink(shareColor) {
+	let state = {
+		formula: currentFormula,
+		params: [],
+		center: center,
+		zoom: zoom
+	}
+	if (shareColor) {
+		state.colorFunc = colorFuncSource;
+		state.colorFuncSelect = colorSelect.value;
+	}
+	for (const sliderDiv of document.getElementById("parameters-box").children) {
+		const slider = sliderDiv.querySelector("input[type=range]");
+		state.params.push(slider2Params.get(slider));
+	}
+	let str = lzbase62.compress(JSON.stringify(state));
+	return location.hostname + location.pathname + "?s=" + str;
+}
+
+function runFromStateObj(state) {
+	formulaBox.value = state.formula;
+	center = state.center;
+	zoom = state.zoom;
+	for (const p in state.params) {
+		addParameter(p);
+	}
+	if (state.colorFunc) {
+		colorSelect.value = state.colorFuncSelect;
+		colorCodeBox.value = state.colorFunc;
+		colorFuncSource = state.colorFunc;
+	} else {
+		colorSelect.value = "HSL, arctan";
+		colorFuncSource = colorFuncs.get("HSL, arctan");
+		colorCodeBox.value = colorFuncSource;
+	}
+	goButton.click();
+}
+
 window.onload = function() {
-	compile("z");
-	draw();
+	let stateData = new URLSearchParams(window.location.search).get("s");
+	if (stateData) {
+		try {
+			let state = JSON.parse(lzbase62.decompress(stateData));
+			runFromStateObj(state);
+		} catch(e) {
+			alert("An error occurred. Check console for details.");
+			document.getElementById("parameters-box").innerHTML = "";
+			document.getElementById("params-list").innerHTML = "";
+			paramsSource = "";
+			runFromStateObj({
+				formula: "z",
+				zoom: DEFAULT_ZOOM,
+				center: [0, 0],
+				params: []
+			});
+			throw e;
+		}
+	} else { // default to z
+		compile(currentFormula);
+		draw();
+	}
 }
