@@ -45,8 +45,6 @@ const alphaTokens = {
 	"z": new Token("z", "var"),
 	"z'": new Token("z'", "var"),
 	"k": new Token("k", "var"),
-	"s": new Token("s", "var"),
-	"t": new Token("t", "var"),
 	"i": new Token("i", "num"),
 	"pi": new Token("pi", "num"),
 	"e": new Token("e", "num"),
@@ -106,7 +104,7 @@ const validTokens = {
 };
 Object.assign(validTokens, alphaTokens);
 
-const alphaSymbols = Object.getOwnPropertyNames(alphaTokens);
+const alphaSymbols = new Set(Object.getOwnPropertyNames(alphaTokens));
 
 // split a string of letters into valid tokens, if possible
 function splitWord(word) {
@@ -117,7 +115,7 @@ function splitWord(word) {
 		let found = false;
 		for (let end = word.length; end > start; end--) {
 			let substr = word.substring(start, end);
-			if (alphaSymbols.includes(substr)) {
+			if (alphaSymbols.has(substr) || /^\d+(?:\.\d*)?$|^\.\d+$/.test(substr)) {
 				splits.push(substr)
 				start = end;
 				found = true;
@@ -135,7 +133,7 @@ function splitWord(word) {
 // split a formula in string form into token strings
 function splitString(str) {
 	// based on some code from http://davidbau.com/conformal/
-	let regex = /(?:\s*)(?:((?:\d+(?:\.\d*)?|\.\d+)|[-+*/()^,]|[a-zA-Z']+)|(\S))/g;
+	let regex = /(?:\s*)(?:((?:\d+(?:\.\d*)?|\.\d+)|[-+*/()^,]|[a-zA-Z][a-zA-Z0-9']*\.?\d*)|(\S))/g;
 	const splitStr = [];
 	let match;
 	while ((match = regex.exec(str)) != null) {
@@ -155,7 +153,7 @@ function splitString(str) {
 function assignTokens(splitStr) {
 	const tokens = [];
 	for (const s of splitStr) {
-		if (/\d+(?:\.\d*)?|\.\d+/.test(s)) {
+		if (/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s)) {
 			tokens.push(new Token(s, "num"));
 		} else if (s == "-") { // special case for minus/neg
 			if (tokens.length) { // if not at beginning of array
@@ -271,9 +269,9 @@ function createExp(node) {
 	} else if (node.token.type == "var") {
 		// special case
 		if (node.token.val == "z'") return "z0";
-		else if (node.token.val == "s") return "vec2(u_s,0.)";
-		else if (node.token.val == "t") return "vec2(u_t,0.)";
-		return node.token.val;
+		else if (node.token.val == "z") return "z";
+		else if (node.token.val == "k") return "k";
+		return `vec2(u_${node.token.val},0.)`;
 	} else if (node.token.type == "special-func") {
 		// glsl expressions for each of the arguments given by the user
 		const funcArgs = [];
@@ -306,4 +304,18 @@ function createExp(node) {
 function parseFormula(str) {
 	clearSpecialFuncInstances();
 	return createExp(shuntingYard(lex(str)));
+}
+
+// registers token for new parameter
+function addParamToken(name) {
+	if (alphaSymbols.has(name)) {
+		throw new Error("token with this name already exists: " + name);
+	}
+	validTokens[name] = new Token(name, "var");
+	alphaSymbols.add(name);
+}
+
+function removeParamToken(name) {
+	delete validTokens[name];
+	alphaSymbols.delete(name);
 }

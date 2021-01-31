@@ -4,19 +4,27 @@ const DEFAULT_ZOOM = 0.01;
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
 
+// ----- glsl source code strings -----
 let colorFuncSource = colorFuncs.get("HSL, arctan");
+let allFuncs = "";
+for (const func of funcs) {
+	allFuncs += func[1];
+}
+let paramsSource = "";
 
+// ----- program, and program state -----
 let programInfo, buffers;
 let zoom = DEFAULT_ZOOM;
 let center = [0, 0];
-let paramS = 0, paramT = 0;
+// let paramS = 0, paramT = 0;
 
+// ----- document elements -----
 const formulaBox = document.getElementById("formula-box");
 const goButton = document.getElementById("go-button");
 const resetZoomButton = document.getElementById("reset-zoom-button");
 const coordsBox = document.getElementById("coords-box");
 const colorSelect = document.getElementById("color-select");
-for (const func of colorFuncs) {
+for (const func of colorFuncs) { // populate color func drop-down
 	const opt = document.createElement("option");
 	opt.text = func[0];
 	colorSelect.add(opt);
@@ -25,11 +33,9 @@ const colorCodeBox = document.getElementById("color-code-box");
 const colorSetButton = document.getElementById("color-set-button");
 colorCodeBox.value = colorFuncSource;
 
-let allFuncs = "";
-for (const func of funcs) {
-	allFuncs += func[1];
-}
 
+
+// ----- top box functionality -----
 goButton.onclick = function() {
 	try {
 		compile(formulaBox.value);
@@ -48,22 +54,16 @@ formulaBox.addEventListener("keydown", function(e) {
 formulaBox.addEventListener("change", function() {
 	formulaBox.value = formulaBox.value.replace(/[\n\r]/g, " ");
 })
-
 resetZoomButton.onclick = function() {
 	zoom = DEFAULT_ZOOM;
 	center = [0, 0];
 	draw();
 }
 
-window.addEventListener("resize", function() {
-	resize();
-	draw();
-});
-
+// ----- color options functionality -----
 colorSelect.onchange = function() {
 	colorCodeBox.value = colorFuncs.get(colorSelect.value);
-};
-
+}
 colorSetButton.onclick = function() {
 	colorFuncSource = colorCodeBox.value;
 	try {
@@ -75,7 +75,126 @@ colorSetButton.onclick = function() {
 	draw();
 }
 
-// sliders at bottom-right
+// ----- parameters functionality -----
+const slider2Params = new Map();
+// update uniform parameter source code
+function updateParamsSource() {
+	paramsSource = "";
+	for (const p of slider2Params) {
+		paramsSource += "uniform float u_" + p[1].name + ";\n";
+	}
+}
+function updateReading(slider, reading) {
+	let param = slider2Params.get(slider);
+	reading.innerHTML = `${param.name} = ${+lerp(param.min, param.max, param.val).toFixed(14)}`;
+}
+function lerp(v0, v1, t) {
+	return v0 + t * (v1 - v0);
+}
+document.getElementById("add-param-button").onclick = function() {
+	const paramDiv = document.createElement("div");
+	const paramNameBox = document.createElement("input");
+	const paramMinBox = document.createElement("input");
+	const paramMaxBox = document.createElement("input");
+	const paramRemoveButton = document.createElement("button");
+	const paramSliderDiv = document.createElement("div");
+	const paramSlider = document.createElement("input");
+	const paramReading = document.createElement("span");
+
+	paramDiv.className = "param-item";
+
+	paramNameBox.type = "text";
+	let id = 0;
+	function isNameTaken(name) {
+		for (const p of slider2Params) {
+			if (p[1].name == name) return true;
+		}
+		return false;
+	}
+	while (isNameTaken("p" + id)) id++;
+	paramNameBox.value = "p" + id;
+	paramNameBox.onchange = function() {
+		let newName = paramNameBox.value;
+		if (!(/^[a-zA-Z][a-zA-Z0-9]*$/.test(newName))) {
+			alert("A parameter name must contain only alphanumeric characters. The name should not begin with a digit.");
+			paramNameBox.value = slider2Params.get(paramSlider).name;
+			return;
+		}
+		try {
+			addParamToken(newName);
+		} catch {
+			alert("A token with that name already exists. Please choose another name.");
+			paramNameBox.value = slider2Params.get(paramSlider).name;
+			return;
+		}
+		removeParamToken(slider2Params.get(paramSlider).name);
+		slider2Params.get(paramSlider).name = newName;
+		updateReading(paramSlider, paramReading);
+		updateParamsSource();
+	}
+	slider2Params.set(paramSlider, {
+		name: paramNameBox.value,
+		min: 0,
+		max: 1,
+		val: 0
+	});
+
+	paramMinBox.type = "number";
+	paramMinBox.className = "param-bounds";
+	paramMinBox.value = 0;
+	paramMinBox.onchange = function() {
+		slider2Params.get(paramSlider).min = parseFloat(paramMinBox.value);
+		updateReading(paramSlider, paramReading);
+		draw();
+	}
+	paramMaxBox.type = "number";
+	paramMaxBox.className = "param-bounds";
+	paramMaxBox.value = 1;
+	paramMaxBox.onchange = function() {
+		slider2Params.get(paramSlider).max = parseFloat(paramMaxBox.value);
+		updateReading(paramSlider, paramReading);
+		draw();
+	}
+
+	paramRemoveButton.type = "button";
+	paramRemoveButton.onclick = function() {
+		removeParamToken(slider2Params.get(paramSlider).name);
+		slider2Params.delete(paramSlider);
+		paramDiv.remove();
+		paramSliderDiv.remove();
+		updateParamsSource();
+	}
+	paramRemoveButton.className = "param-remove-button";
+	paramRemoveButton.innerHTML = "X";
+
+	paramSlider.type = "range";
+	paramSlider.min = 0;
+	paramSlider.max = 1;
+	paramSlider.step = 0.001;
+	paramSlider.value = 0;
+	paramSlider.oninput = function() {
+		let val = parseFloat(paramSlider.value);
+		slider2Params.get(paramSlider).val = val;
+		updateReading(paramSlider, paramReading);
+		draw();
+	}
+
+	updateReading(paramSlider, paramReading);
+	addParamToken(paramNameBox.value);
+	updateParamsSource();
+
+	paramDiv.appendChild(paramNameBox);
+	paramDiv.appendChild(paramMinBox);
+	paramDiv.appendChild(paramMaxBox);
+	paramDiv.appendChild(paramRemoveButton);
+	document.getElementById("params-list").appendChild(paramDiv);
+	paramSliderDiv.appendChild(paramSlider);
+	paramSliderDiv.appendChild(paramReading);
+	document.getElementById("parameters-box").appendChild(paramSliderDiv);
+};
+
+// ----- slider functionality -----
+/*
 document.getElementById("slider-s").oninput = function() {
 	paramS = document.getElementById("slider-s").value;
 	document.getElementById("reading-s").innerHTML = `s = ${paramS}`;
@@ -85,8 +204,9 @@ document.getElementById("slider-t").oninput = function() {
 	paramT = document.getElementById("slider-t").value;
 	document.getElementById("reading-t").innerHTML = `t = ${paramT}`;
 	draw();
-}
+}*/
 
+// ----- navigation functionality -----
 let mouseDown = false;
 canvas.addEventListener('mousemove', function(e) {
 	if (mouseDown) {
@@ -110,6 +230,11 @@ canvas.addEventListener('wheel', function(e) {
 	}
 	draw();
 	updateCoords(e);
+});
+
+window.addEventListener("resize", function() {
+	resize();
+	draw();
 });
 
 function updateCoords(e) {
@@ -152,8 +277,7 @@ function compile(formula) {
 	#define C_PI vec2(3.1415926535897932384626433832795,0.)
 	#define MAX_ITERATIONS 200
 	precision highp float;
-	uniform float u_s;
-	uniform float u_t;
+	${paramsSource}
 	varying vec2 v_z;
 	${allFuncs}
 	${allSpecialFuncs}
@@ -213,11 +337,13 @@ function compile(formula) {
 		uniformLocs: {
 			res: gl.getUniformLocation(program, "u_res"),
 			zoom: gl.getUniformLocation(program, "u_zoom"),
-			center: gl.getUniformLocation(program, "u_center"),
-			s: gl.getUniformLocation(program, "u_s"),
-			t: gl.getUniformLocation(program, "u_t")
+			center: gl.getUniformLocation(program, "u_center")
 		}
 	};
+	for (const p of slider2Params) {
+		const pName = p[1].name;
+		programInfo.uniformLocs[pName] = gl.getUniformLocation(program, "u_" + pName);
+	}
 
 	const posBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
@@ -243,8 +369,12 @@ function draw() {
 	gl.uniform2f(programInfo.uniformLocs.res, canvas.clientWidth / 2, canvas.clientHeight / 2);
 	gl.uniform1f(programInfo.uniformLocs.zoom, zoom);
 	gl.uniform2fv(programInfo.uniformLocs.center, center);
-	gl.uniform1f(programInfo.uniformLocs.s, paramS);
-	gl.uniform1f(programInfo.uniformLocs.t, paramT);
+	//gl.uniform1f(programInfo.uniformLocs.s, paramS);
+	//gl.uniform1f(programInfo.uniformLocs.t, paramT);
+	for (const p of slider2Params) {
+		let val = lerp(p[1].min, p[1].max, p[1].val);
+		gl.uniform1f(programInfo.uniformLocs[p[1].name], val);
+	}
 
 	gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
