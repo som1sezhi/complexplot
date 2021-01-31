@@ -32,7 +32,8 @@ for (const func of colorFuncs) { // populate color func drop-down
 const colorCodeBox = document.getElementById("color-code-box");
 const colorSetButton = document.getElementById("color-set-button");
 colorCodeBox.value = colorFuncSource;
-
+const shareModal = document.getElementById("share-modal");
+const shareSuccess = document.getElementById("share-successful-message");
 
 
 // ----- top box functionality -----
@@ -105,6 +106,33 @@ canvas.addEventListener('wheel', function(e) {
 	}
 	draw();
 	updateCoords(e);
+});
+
+// ----- sharing functionality -----
+document.getElementById("share-button").onclick = function() {
+	shareModal.style.display = "block";
+}
+document.getElementById("copy-link-button").onclick = function() {
+	let includeColor = document.getElementById("share-color-checkbox").checked;
+	let link = generateShareLink(includeColor);
+	navigator.clipboard.writeText(link)
+		.then(function() {
+			shareSuccess.style.color = "#66ff66";
+			shareSuccess.innerHTML = "Successfully copied link"
+		}).catch(function() {
+			shareSuccess.style.color = "#ff6666";
+			shareSuccess.innerHTML = "Copy failed"
+		});
+}
+/*document.getElementById("close-modal-button").onclick = function() {
+	shareModal.style.display = "none";
+	shareSuccess.innerHTML = "";
+}*/
+window.addEventListener("click", function(e) {
+	if (e.target == shareModal) {
+		shareModal.style.display = "none";
+	}
+	shareSuccess.innerHTML = "";
 });
 
 window.addEventListener("resize", function() {
@@ -183,6 +211,7 @@ function addParameter(paramObj) {
 	paramMinBox.className = "param-bounds";
 	paramMinBox.value = paramObj.min;
 	paramMinBox.onchange = function() {
+		if (isNaN(parseFloat(paramMinBox.value))) paramMinBox.value = 0;
 		slider2Params.get(paramSlider).min = parseFloat(paramMinBox.value);
 		updateReading(paramSlider, paramReading);
 		draw();
@@ -191,6 +220,7 @@ function addParameter(paramObj) {
 	paramMaxBox.className = "param-bounds";
 	paramMaxBox.value = paramObj.max;
 	paramMaxBox.onchange = function() {
+		if (isNaN(parseFloat(paramMaxBox.value))) paramMaxBox.value = 0;
 		slider2Params.get(paramSlider).max = parseFloat(paramMaxBox.value);
 		updateReading(paramSlider, paramReading);
 		draw();
@@ -211,7 +241,7 @@ function addParameter(paramObj) {
 	paramSlider.min = 0;
 	paramSlider.max = 1;
 	paramSlider.step = 0.001;
-	paramSlider.value = paramObj.value;
+	paramSlider.value = paramObj.val;
 	paramSlider.oninput = function() {
 		let val = parseFloat(paramSlider.value);
 		slider2Params.get(paramSlider).val = val;
@@ -408,7 +438,7 @@ function runFromStateObj(state) {
 	formulaBox.value = state.formula;
 	center = state.center;
 	zoom = state.zoom;
-	for (const p in state.params) {
+	for (const p of state.params) {
 		addParameter(p);
 	}
 	if (state.colorFunc) {
