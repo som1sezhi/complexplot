@@ -17,6 +17,15 @@
 			input, button {
 				vertical-align: middle;
 			}
+			a:link {
+				color: #68f;
+			}
+			a:visited {
+				color: #a6f;
+			}
+			a:active {
+				color: #f66;
+			}
 
 			canvas {
 				width: 100vw;
@@ -68,7 +77,14 @@
 				left: 0;
 				z-index: 1;
 			}
-			#coords-box, #parameters-box {
+			#bottom-box {
+				position: fixed;
+				margin: 10;
+				bottom: 0;
+				right: 0;
+				z-index: 1;
+			}
+			#coords-box, #parameters-box, #bottom-box {
 				color: white;
 				/*font-size: 0.8em;*/
 				text-shadow: /* lol */
@@ -183,6 +199,10 @@
 			</div>
 		</div>
 		<div id="coords-box"></div>
+		<div id="bottom-box">
+			<a href="docs.html">about + docs</a>
+			<a href="https://github.com/som1sezhi/complexplot">github</a>
+		</div>
 		<div id="options">
 			<div id="options-button">options</div>
 			<div id="options-box">

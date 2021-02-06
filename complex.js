@@ -230,7 +230,7 @@ registerSpecial("iteresc", function(args, id) {
 	vec2 iteresc_${id}(vec2 z, vec2 initial, vec2 iter, vec2 bound) {
 		vec2 z0 = initial;
 		int limit = int(iter.x);
-		float flimit = float(limit);
+		float flimit = float(limit) + 1.;
 		float b = length(bound);
 		for (int i = 0; i < MAX_ITERATIONS; i++) {
 			if (length(z0) > b) {return vec2(float(i)/flimit, 0.);}

@@ -1,0 +1,441 @@
+<html>
+	<head>
+		<title>Complex Function Plotter Documentation</title>
+		<style>
+			body {
+				padding: 10px;
+				font-size: 1em;
+			}
+			code, td:nth-child(1) {
+				font-family: Consolas, monospace;
+				background-color: #ddd;
+			}
+			code {
+				padding: 0px 2px;
+			}
+			td {
+				padding: 10px 5px;
+			}
+			td:nth-child(1) {
+				width: 250px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>complexplot</h1>
+		<p>
+			<a href="https://som1sezhi.github.io/complexplot/">complexplot</a> is a rudimentary complex function plotter that
+			uses <a href="https://en.wikipedia.org/wiki/Domain_coloring">domain coloring</a>
+			to visualize functions.
+		</p>
+		<p>
+			The image displayed by complexplot is a representation of the domain of a complex
+			function <code>f</code>. Each point <code>z</code> in the complex plane is assigned a color based on the
+			value of <code>f(z)</code>. Typically the hue of the color corresponds to the argument (angle)
+			of <code>f(z)</code>, while the brightness/lightness corresponds to the magnitude.
+		</p>
+		<p>
+			It should be noted that I am not an expert in numerical computation,
+			and many functions can return inaccurate results outside even a
+			moderate range in the domain. Also, since the internal shader code uses single-precision
+			floats, the precision and range of this plotter are quite limited, making
+			it easy to over/underflow.
+			The accuracy may improve in the future as I come across better algorithms.
+		</p>
+
+		<h2>Contents</h2>
+		<ul>
+			<li><a href="#basic-usage">Basic usage</a></li>
+			<li><a href="#custom-parameters">Custom parameters</a></li>
+			<li><a href="#color-functions">Color functions</a></li>
+			<li><a href="#some-plot-examples">Some plot examples</a></li>
+			<li><a href="#function-reference">Function reference</a></li>
+		</ul>
+
+		<h2 id="basic-usage">Basic usage</h2>
+		<p>
+			Click and drag the main image to pan the view around.
+			Use the scroll wheel to zoom in and out of the image.
+		</p>
+		<p>
+			In the top-left corner, there is a text box which you can use
+			to write an expression for the function to be plotted. The expression
+			should be in terms of <code>z</code>. The following arithmetic operators are available:
+		</p>
+		<ul>
+			<li>addition (<code>+</code>)</li>
+			<li>subtraction (<code>-</code>)</li>
+			<li>multiplication (<code>*</code> or concatenation)</li>
+			<li>division (<code>/</code>)</li>
+			<li>exponentiation (<code>^</code>)</li>
+			<li>negation (prefix <code>-</code>)</li>
+		</ul>
+		<p>
+			The standard order of operations apply here. In addition, you can use
+			parentheses <code>( )</code> to override operator precedence as needed.
+		</p>
+		<p>
+			The constants <code>i</code>, <code>pi</code>, and <code>e</code> are available, as well as a multitude of
+			functions; a full list of functions can be found <a href="#function-reference">here</a>.
+		</p>
+		<p>
+			In the top box there are also three buttons: "Go", "Reset zoom", and
+			"Share". "Go" evaluates the function expression currently in the
+			text box and plots it onto the screen. "Reset zoom" recenters the
+			view to (0+0i) and resets the zoom to a reasonable value, in case
+			you get lost. "Share" allows you to copy a direct link to the
+			current view into the clipboard. The current view location, zoom
+			level, function expression, and
+			<a href="#custom-parameters">parameter values</a> are always saved in
+			this link. The current <a href="#color-functions">color function</a>
+			being used can also be saved, by checking the "Share color function
+			as well" checkbox (though this dramatically increases the size of
+			the link).
+		</p>
+		<p>
+			Hovering over the top-right box labelled "Options" reveals a panel
+			of options where you can set the color function used to plot the
+			function, as well as where you can set up parameters to use in your
+			function expressions. More details are in their respective sections.
+		</p>
+
+		<h2 id="custom-parameters">Custom parameters</h2>
+		<p>
+			You can specify custom function parameters for use in your expressions.
+			These show up as sliders you can drag around to vary the value
+			of each parameter. The plot will respond to these changes in real time. This can
+			be used to easily explore whole families of functions.
+		</p>
+		<p>
+			To add a parameter, go to the options panel and click on the
+			"Add new parameter" button. A row of 3 text boxes and a red "X" button
+			should appear, along with a slider below the top box.
+			Enter the name of the parameter in the first box, and the minimum and
+			maximum values for the parameter in the second and third boxes
+			respectively. Now you can type an expression into the formula box that uses the name of the
+			parameter you set, hit "Go", and drag the slider around
+			to watch the function evolve. To remove a parameter, click the red
+			"X" in its row.
+		</p>
+		<p>
+			The name of a parameter must be non-empty and contain only alphanumeric
+			characters. Additionally, the name cannot begin with a digit.
+			The minimum and maximum bounds can only be real numbers.
+		</p>
+
+		<h2 id="color-functions">Color functions</h2>
+		<p>
+			The color function takes in a complex number value (the value of <code>f(z)</code>)
+			and returns a color corresponding to that value. The color function
+			can be changed by going to the options panel, selecting an option
+			from the "Color function" dropdown, and clicking the "Set as color
+			function" button to recompile the shader.
+		</p>
+		<p>
+			You can also write your own color function in the large text box,
+			as long as you know some GLSL. The function has signature
+			<code>vec3 colorFunc(vec2 fz)</code>; it takes in a <code>vec2</code>
+			storing the real and imaginary parts of <code>f(z)</code> in its components, and it returns a
+			<code>vec3</code> representing a color in RGB, with each component
+			ranging from 0 to 1.
+		</p>
+		<p>
+			Outside of <code>colorFunc</code>, you can also define your own helper
+			functions, though you should probably be wary of possible name collisions
+			since this code is injected straight into the shader source. Compiler
+			errors are logged in the console, so check there if you are getting errors
+			trying to write your own color functions.
+		</p>
+		<p>
+			The built-in GLSL functions are available to use, as well as a few
+			helper functions built into the shader code to make writing color
+			functions easier:
+		</p>
+		<table>
+			<tr>
+				<td>float arg(vec2 z)</td>
+				<td>Given a complex number <code>z</code> in <code>vec2</code> format,
+					returns its argument (a value in the interval (-π/2, π/2]).</td>
+			</tr>
+			<tr>
+				<td>vec3 hsl2rgb(float h, float s, float l)</td>
+				<td>Converts a color from HSL to RGB. Each of <code>h</code>,
+					<code>s</code>, and <code>l</code> must range
+					between 0 and 1.
+			</tr>
+			<tr>
+				<td>vec3 hsv2rgb(float h, float s, float v)</td>
+				<td>Converts a color from HSV/HSB to RGB. Each of <code>h</code>,
+					<code>s</code>, and <code>v</code> must range
+					between 0 and 1.
+			</tr>
+			<tr>
+				<td>bool isNan(float val)</td>
+				<td>Returns true iff <code>val</code> is NaN.
+					Can be useful for detecting infinite complex values;
+					<code>isNan(length(fz))</code> returns true if
+					<code>fz</code> is an infinite complex value.</td>
+			</tr>
+		</table>
+		<p>
+			The built-in GLSL function <code>length</code> can be used to
+			get the magnitude of a complex number.
+		</p>
+		<p>
+			Custom parameters are also available as uniform float variables
+			under the name <code>u_(parameter name)</code>.
+		</p>
+
+		<h2 id="some-plot-examples">Some plot examples</h2>
+		<ul>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSriuCtOsLFJrisEritgRiRdj2RtLN2MtTVekVixMDsIEIxPDuCtffd2NsIGIJuF">
+					<code>z^3-1</code>
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSrisAuCtOsKFJB2HsF2HtZsB2MsHxREsDxCD2NrisEritgRiRdj2ntLN2MtTVekVixMDsIGQRxBOsE2TsKNKIxBMsOxyDuCtffd2w2csIJKuF">
+					<code>(z^2-1)(z-2-i)^2/(z^2+2+2i)</code>
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritjZesAJHuCsBrisEritgRiRdj2UtLN2MtTVekVixMDsIEIxPDuCtffd2NsIGIILLMQRP2CsOOQ2MsQMJNuF">
+					<code>sin(1/z)</code>
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritXRddRsAuCsBrisEritgRi2Ntj2UtLN2MtTVekVixMDsIEIxPDuCtffd2NsIGIJMMIxBMsJuF">
+					<code>gamma(z)</code>
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSriuCtOsKCtVOsAtjsCtZsCtcesAtRSjsAuCsB2BrisEritgRiRdj2itL2utdZe2IsFJI2VtdRuA2KxJEtmRc2JsIGPOO2Mte2otVyND2suFtN2NtTVekVix3D2lsIxPDuCtffdxpEsIJuF">
+					<code>z^2*e^(s*i*ln(abs(z)))</code> (cool spiral)
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritjldsAuCsErguCtObsHtWRTk2YtZRcsAtbsB2StZkVijsBrisEritgRiRdj2rtL23tdZe2IsJ2TtdRuA2IsKxJDtm2t2JsIGN2Kte2ktVySDx2FriuFtN2RtTVexMDx3DsIEIxPDuCtffdxrEsIKIPLOuF">
+					Maclaurin series for <code>exp(z)</code>
+				</a>
+			</li>
+		</ul>
+		<h3>Fractals</h3>
+		<ul>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkViVjTsAuCsErgsI2DuCrntOgrgsD2H2KxYEtj2HsKBrisEritgRiRdj2ttL25tdZe2IsJ2TtdRuA2IsRR2JtmRc2JsIGN2Kte2ktVyUH2suFsExsH3YxsGsQxrJsKxsKtg2otN2NtTVex0DyiD2ssIxPDuCtffdxoEsIIMQK2tsLIQOMJRP2JsJNuF">
+					Mandelbrot set (and friends)
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkViVjTsAuCsErgxDErntOsKrgsDrgtRsDtSZ2NxbEtj2HsGNAtjhiksAMtRSjsAxaEsBDJxDEsBrisEritgRiRdj3KtL3WtdZe2IsJ2TtdRuAxIDsRR2KtmRc2KsI3C2Kte2ltVyvH2tuFsExtHsFKxuHxIDxsIsNMxuJ4kxqcsLNylDxqHtS2qtN2NtTVeyjDzSDsIEIxPDuCtffdxpEsIIMQKKNLIQOM4dsP2JsJNuF">
+					Julia sets for quadratic polynomials
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkViVjTsAtTfeasAuCsBErgsI2DsAtRSjsA2W2PrnsBBDtZxNEtZdxNFsBtOsKrgsDrguC2ix2Etj2HsKBrisEritgRiRdj3OtL3atdZe2IsJ2TtdRuA2IsRR2JtmRc2JsIGN2Kte2ktVyyH2suFtN2RtTVexMDx3DsFxgDsIKJ2CsRJLNQ2KsMOQExTD2KsINMI2XsLMNOPRLxyDuCtffdyRE2ZsMQKKNLIQOM21sP2JsJNuF">
+					Burning ship fractal
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkViVjTsAuCsErgsI2DtTfea2LrnsBtOgrgsDrgxTDxeEtj2HsKBrisEritgRiRdj2ztL3CtdZe2IsJ2TtdRuA2IsRR2JtmRc2JsIGN2Kte2ktVyaH2suFsExsH3exsGsQxrJsKxsKtg2otN2NtTVex0DyiD2ssIxPDuCtffdxoEsIINPQPILxDJsQuF">
+					Tricorn
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkVisAuCsErgxDErngsFrgsAtRsIrgsDrgtRsJxNDxHDsK2HtOsKxJEsLxJDsLBH2esJxODsKCxZExJDsL2JxZEsKB3AyLEtjsBrisEritgRiRdj3dtL3ptdZe2IsJ2TtdRuA2IsLR2JtmRc2JsIGN2Kte2ktVzEH2suFsExsHsFJIxuHxJExuHsMMOxwJ4jxtfyeK4wxrqsKxrgsNMxtKsL2ttN2OtTVe0FD0wD2msIxPDuCtffdxqEsIJuF">
+					Newton's fractal for cubic polynomials with real coefficients
+				</a>
+			</li>
+			<li>
+				<a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkViVjTsAuCtVOsAKtZgZsCtnVZiUEnZjksBErguCxDDrn2ZsFKBDxLDxsEtj2HxvDtRgVsatfleUsBrisEritgRiRdj3OtL3atdZe2IsJ2TtdRuA2IsPR2JtmRc2JsIGN2Kte2ktVyyH2suFsExsHsIxsHsJxJDxsIsJOxuJytLx0TxzJsLPykK0IKxybxuJtYl2GuFtN2PtTVezfD0NDsF3RsIRQ3UsROKxDHsPExUEsPMxDNsMx0DuCtffdzEEsIINPQPI20xDIsQzUDtTfcfise5BtTyoDtmVTsLrgxRJsAxPDsKrgtWuCsBrguDtMeMkW2XtRkrgtcrgsVrgsJGrgsFxYDsGuAsTxYKtYxYDtdfUsA5QuAsA3tsPrgsDrgtlPz6DsExtDsJNxOKtcsBxSEsBx5DrgxBHyUEx1G6Brg2FsQxkEybFtiVkli2ntYjcsKtiXSsAtY2Z3axdHuFri0BLtDVc4utk0HDsgtDskygDsHAtiORsDJB66">
+					An example of using <code>iteresc</code> and custom color functions to color fractals
+				</a>
+			</li>
+		</ul>
+
+		<h2 id="function-reference">Function reference</h2>
+		<table>
+			<tr>
+				<td>abs(z)</td>
+				<td>Computes the magnitude of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>acos(z)</td>
+				<td>Computes the inverse cosine of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>angle(z)</td>
+				<td>Alias of <code>arg(z)</code>.</td>
+			</tr>
+			<tr>
+				<td>arccos(z)</td>
+				<td>Alias of <code>acos(z)</code>.</td>
+			</tr>
+			<tr>
+				<td>arcsin(z)</td>
+				<td>Alias of <code>asin(z)</code>.</td>
+			</tr>
+			<tr>
+				<td>arctan(z)</td>
+				<td>Alias of <code>atan(z)</code>.</td>
+			</tr>
+			<tr>
+				<td>arg(z)</td>
+				<td>Computes the argument of <code>z</code>. Returns a
+					real value in the interval (-π/2, π/2].</td>
+			</tr>
+			<tr>
+				<td>asin(z)</td>
+				<td>Computes the inverse sine of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>atan(z)</td>
+				<td>Computes the inverse tangent of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>avg(z, w)</td>
+				<td>Computes the average of <code>z</code> and <code>w</code>,
+					i.e. <code>(z+w)/2</code>.</td>
+			</tr>
+			<tr>
+				<td>conj(z)</td>
+				<td>Returns the complex conjugate of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>cos(z)</td>
+				<td>Computes the complex cosine of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>exp(z)</td>
+				<td>Computes <code>e^z</code>.</td>
+			</tr>
+			<tr>
+				<td>factorial(z)</td>
+				<td>Computes the factorial function generalized to the complex numbers,
+					i.e. <code>gamma(z+1)</code>.</td>
+			</tr>
+			<tr>
+				<td>gamma(z)</td>
+				<td>Computes the <a href="https://en.wikipedia.org/wiki/Gamma_function">gamma function</a>
+					evaluated at <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>im(z)</td>
+				<td>Returns the imaginary part of <code>z</code> as a real number.</td>
+			</tr>
+			<tr>
+				<td>iter(z, initial, expression, iterations)</td>
+				<td>
+					<p>
+						Given an expression <code>expression</code> in terms of the variable <code>z'</code>,
+						return <code>z'</code> after iterating the function given by <code>expression</code>
+						for <code>max(0, floor(re(iterations)))</code> iterations,
+						starting from <code>z' = initial</code>. The value given by the
+						first argument, <code>z</code>, will be used as the value for any instance
+						of the variable <code>z</code> within <code>expression</code>.
+					</p>
+					<p>
+						Example: for <code><a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkVisAuCsErgsI2DuCrntOsKDxLDsJIBrisEritgRiRdj2itLN2MtTVexnDxMD2msIxPDuCtffd2NsIGIJuF">iter(z, 0, z'^2+z, 10)</a></code>,
+						<code>z'</code> starts off with the value <code>0</code>. After one iteration,
+						<code>z'</code> is assigned the value of <code>(z'_0)^2+z</code>,
+						where <code>z'_0 = 0</code> was the previous value of <code>z'</code>.
+						After two iterations, <code>z'</code>
+						is assigned the value of <code>(z'_1)^2 + z</code>, where
+						<code>z'_1 = (z'_0)^2+z</code> was the previous value of <code>z'</code>.
+						In general, after <code>n</code> iterations,
+						<code>z'</code> is assigned the value of <code>(z'_n-1)+z</code>,
+						where <code>(z'_n-1)</code> was the previous value of <code>z'</code>.
+						In this case, this repeats for a total of 10 iterations before
+						the value of <code>z'</code> is returned. This should give an image resembing
+						the <a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Mandelbrot set</a>.
+						As you can see, this function is quite useful for generating fractals.
+					</p>
+					<p>
+						Example 2: for <code><a href="https://som1sezhi.github.io/complexplot/?s=uDritWfidlcRrisSritZkVisAtZuCsErgsI2DuCrntOsKDxLDsJIBrisEritgRiRdj2jtLN2MtTVexoDxMD2msIxPDuCtffd2NsIGIJuF">iter(iz, 0, z'^2+z, 10)</a></code>,
+						the first argument being <code>iz</code> has the effect of turning
+						the expression <code>z'^2+z</code> into <code>z'^2+iz</code>.
+						Since multiplying by <code>i</code> has the effect of rotating the
+						complex plane 90 degrees clockwise, this should give an image resembling
+						the Mandelbrot set rotated 90 degrees clockwise. You can see how
+						the first argument is useful in performing transformations of the
+						domain space before doing iterations on it.
+					</p>
+					<p>
+						The number of iterations performed per call is currently hard-capped at 200.
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>iteresc(z, initial, expression, iterations, escapeBound)</td>
+				<td>
+					<p>
+						Similar to <code>iter(z, initial, expression, iterations)</code>,
+						but instead returns a real value in the interval [0, 1] corresponding to the number of iterations
+						before <code>abs(z') > escapeBound</code>.
+						Specifically, it returns <code>n/(maxIterations + 1)</code>,
+						where <code>n</code> is the number of iterations until
+						<code>abs(z') > escapeBound</code> is satisfied, and
+						<code>maxIterations = max(0, floor(re(iterations)))</code>.
+						If <code>abs(z')</code> never goes above <code>escapeBound</code>
+						after <code>maxIterations</code> iterations, this function returns 1.
+					</p>
+					<p>
+						This function can be very useful for creating good-looking images
+						of fractals, e.g. when creating custom color functions mapping
+						number of iterations to colors
+						(the <a href="https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set#Escape_time_algorithm">escape time algorithm</a>).
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>ln(z)</td>
+				<td>Calculates the natural logarithm of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>log(z)</td>
+				<td>Alias of <code>ln(z)</code>.</td>
+			</tr>
+			<tr>
+				<td>mag(z)</td>
+				<td>Alias of <code>abs(z)</code>.</td>
+			</tr>
+			<tr>
+				<td>re(z)</td>
+				<td>Returns the real part of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>sgn(z)</td>
+				<td>Calculates the signum function, i.e. <code>z/abs(z)</code>,
+					i.e. the point on the unit circle closest to <code>z</code>.
+					If <code>z = 0</code>, it returns 0.</td>
+			</tr>
+			<tr>
+				<td>sin(z)</td>
+				<td>Calculates the complex sine of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>sqrt(z)</td>
+				<td>Calculates the square root <code>z^0.5</code> of <code>z</code>.</td>
+			</tr>
+			<tr>
+				<td>sum(z, expression, n)</td>
+				<td>
+					<p>
+						Given an expression <code>expression</code> in terms of
+						the variable <code>k</code>, return the result of the sum
+						<code>term_0 + term_1 + term_2 + ... + term_(numTerms-1)</code>, where
+						each <code>term_i</code> is the result of substituting
+						<code>k = i</code> into <code>expression</code>, and
+						<code>numTerms = max(0, floor(re(n)))</code>. The value given by the
+						first argument, <code>z</code>, will be used as the value for any instance
+						of the variable <code>z</code> within <code>expression</code>.
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td>tan(z)</td>
+				<td>Calculates the complex tangent of <code>z</code>.</td>
+			</tr>
+		</table>
+	</body>
+</html>
